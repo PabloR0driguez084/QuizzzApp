@@ -1,3 +1,4 @@
+/* app.component.scss */
 ion-menu ion-content {
   --background: var(--ion-item-background, var(--ion-background-color, #fff));
 }
@@ -17,30 +18,10 @@ ion-menu.md ion-note {
   margin-bottom: 30px;
 }
 
-ion-menu.md ion-list-header,
-ion-menu.md ion-note {
-  padding-left: 10px;
-}
-
-ion-menu.md ion-list#inbox-list {
-  border-bottom: 1px solid var(--ion-background-color-step-150, #d7d8da);
-}
-
-ion-menu.md ion-list#inbox-list ion-list-header {
+ion-menu.md ion-list-header {
   font-size: 22px;
   font-weight: 600;
-
   min-height: 20px;
-}
-
-ion-menu.md ion-list#labels-list ion-list-header {
-  font-size: 16px;
-
-  margin-bottom: 18px;
-
-  color: #757575;
-
-  min-height: 26px;
 }
 
 ion-menu.md ion-item {
@@ -66,6 +47,9 @@ ion-menu.md ion-item ion-label {
 }
 
 ion-menu.ios ion-content {
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 20px;
   --padding-bottom: 20px;
 }
 
@@ -84,36 +68,60 @@ ion-menu.ios ion-item {
   --min-height: 50px;
 }
 
-ion-menu.ios ion-item.selected ion-icon {
-  color: var(--ion-color-primary);
-}
-
 ion-menu.ios ion-item ion-icon {
   font-size: 24px;
   color: #73849a;
 }
 
-ion-menu.ios ion-list#labels-list ion-list-header {
-  margin-bottom: 8px;
-}
-
-ion-menu.ios ion-list-header,
-ion-menu.ios ion-note {
-  padding-left: 16px;
-  padding-right: 16px;
-}
-
-ion-menu.ios ion-note {
-  margin-bottom: 8px;
+ion-menu.ios ion-item .selected ion-icon {
+  color: var(--ion-color-primary);
 }
 
 ion-note {
   display: inline-block;
   font-size: 16px;
-
   color: var(--ion-color-medium-shade);
 }
 
 ion-item.selected {
   --color: var(--ion-color-primary);
+}
+
+/* Estilos para la flecha del menú */
+.menu-arrow-container {
+  position: fixed;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  z-index: 999;
+  background-color: var(--ion-color-primary);
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 15px 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-arrow-container:hover {
+  background-color: var(--ion-color-primary-shade);
+  padding-right: 8px;
+}
+
+.menu-arrow {
+  font-size: 20px;
+  color: white;
+}
+
+/* Ocultar la flecha cuando el menú está abierto en pantallas pequeñas */
+.split-pane-visible .menu-arrow-container {
+  display: none;
+}
+
+/* Ajustar el espacio para el contenido principal */
+ion-router-outlet {
+  min-height: 100%;
 }

@@ -1,3 +1,41 @@
+<!-- app.component.html -->
 <ion-app>
-  <ion-router-outlet></ion-router-outlet>
+  <!-- Contenedor condicional que solo aparece cuando NO estamos en la página de login -->
+  @if (!isLoginPage) {
+    <ion-split-pane contentId="main-content">
+      <!-- Menú lateral -->
+      <ion-menu contentId="main-content" type="overlay" (ionDidOpen)="onMenuOpen()" (ionWillClose)="onMenuClose()">
+        <ion-content>
+          <ion-list id="inbox-list">
+            <ion-list-header>Mi App</ion-list-header>
+            <ion-note>Menú de navegación</ion-note>
+
+            @for (p of appPages; track p.url) {
+              <ion-menu-toggle auto-hide="false">
+                <ion-item #menuItem [routerDirection]="'root'" [routerLink]="[p.url]" lines="none" detail="false" routerLinkActive="selected">
+                  <ion-icon aria-hidden="true" slot="start" [ios]="p.icon + '-outline'" [md]="p.icon + '-sharp'"></ion-icon>
+                  <ion-label>{{ p.title }}</ion-label>
+                </ion-item>
+              </ion-menu-toggle>
+            }
+          </ion-list>
+        </ion-content>
+      </ion-menu>
+      
+      <!-- Contenido principal con flecha para abrir el menú -->
+      <div class="ion-page" id="main-content">
+        <!-- Flecha para abrir el menú situada en la mitad izquierda de la pantalla -->
+        <ion-menu-toggle>
+          <div class="menu-arrow-container">
+            <ion-icon name="chevron-forward" class="menu-arrow"></ion-icon>
+          </div>
+        </ion-menu-toggle>
+        
+        <ion-router-outlet></ion-router-outlet>
+      </div>
+    </ion-split-pane>
+  } @else {
+    <!-- En la página de login, solo mostrar el contenido sin el menú lateral -->
+    <ion-router-outlet></ion-router-outlet>
+  }
 </ion-app>
