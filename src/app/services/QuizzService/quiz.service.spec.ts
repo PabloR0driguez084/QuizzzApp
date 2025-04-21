@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { ReferenciaService } from './referencia.service';
+import { QuizService } from './quiz.service';
 
-describe('ReferenciaService', () => {
-  let service: ReferenciaService;
+describe('QuizService', () => {
+  let service: QuizService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(ReferenciaService);
+    service = TestBed.inject(QuizService);
   });
 
   it('should be created', () => {

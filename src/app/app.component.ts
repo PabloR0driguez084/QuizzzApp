@@ -36,7 +36,8 @@ export class AppComponent {
   public appPages = [
     { title: 'Home', url: '/home', icon: 'home' },
     { title: 'Historial', url: '/historial', icon: 'time' },
-    { title: 'Pruebas', url: '/pruebas', icon: 'clipboard' }
+    { title: 'New Quizz', url: '/newquizz', icon: 'clipboard' },
+    { title: 'My Quizz', url: '/myquizz', icon: 'clipboard' }
   ];
   
   public isLoginPage = false;

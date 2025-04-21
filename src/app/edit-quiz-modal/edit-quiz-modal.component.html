@@ -1,0 +1,76 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Editar Quiz</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="cancel()">
+        <ion-icon name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div *ngIf="isLoading" class="ion-text-center">
+    <ion-spinner name="circular"></ion-spinner>
+    <p>Cargando quiz...</p>
+  </div>
+
+  <form [formGroup]="quizForm" *ngIf="!isLoading && quizForm">
+    <ion-item>
+      <ion-label position="floating">Título</ion-label>
+      <ion-input formControlName="title" type="text"></ion-input>
+    </ion-item>
+    
+    <ion-item>
+      <ion-label position="floating">Descripción</ion-label>
+      <ion-textarea formControlName="description"></ion-textarea>
+    </ion-item>
+
+    <h3>Preguntas</h3>
+    
+    <div formArrayName="questions">
+      <ion-card *ngFor="let questionControl of questions.controls; let i = index">
+        <ion-card-content [formGroupName]="i">
+          <ion-item>
+            <ion-label position="floating">Pregunta {{ i + 1 }}</ion-label>
+            <ion-input formControlName="text"></ion-input>
+          </ion-item>
+          
+          <h4>Opciones</h4>
+          <div [formArrayName]="'options'">
+            <ion-item *ngFor="let option of getOptionsFormArray(i).controls; let j = index">
+              <ion-label position="floating">Opción {{ j + 1 }}</ion-label>
+              <ion-input [formControlName]="j"></ion-input>
+              <ion-buttons slot="end">
+                <ion-button *ngIf="getOptionsFormArray(i).length > 1" color="danger" (click)="removeOption(i, j)">
+                  <ion-icon name="trash-outline"></ion-icon>
+                </ion-button>
+              </ion-buttons>
+            </ion-item>
+          </div>
+
+          <ion-button expand="block" fill="outline" size="small" (click)="addOption(i)">
+            <ion-icon name="add-outline"></ion-icon>
+            Añadir opción
+          </ion-button>
+          
+          <ion-button *ngIf="questions.length > 1" color="danger" fill="outline" size="small" (click)="removeQuestion(i)">
+            <ion-icon name="trash-outline"></ion-icon>
+            Eliminar pregunta
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <ion-button expand="block" fill="outline" (click)="addQuestion()">
+      <ion-icon name="add-outline"></ion-icon>
+      Añadir pregunta
+    </ion-button>
+
+    <div class="ion-padding">
+      <ion-button expand="block" (click)="saveQuiz()" [disabled]="quizForm.invalid">
+        Guardar cambios
+      </ion-button>
+    </div>
+  </form>
+</ion-content>

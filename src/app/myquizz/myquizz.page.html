@@ -1,0 +1,99 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Mis Cuestionarios</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Mis Cuestionarios</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <!-- Refresh Control -->
+  <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+    <ion-refresher-content 
+      pullingIcon="chevron-down-circle-outline" 
+      pullingText="Desliza para actualizar" 
+      refreshingSpinner="circles" 
+      refreshingText="Actualizando...">
+    </ion-refresher-content>
+  </ion-refresher>
+
+  <!-- Buscador -->
+  <ion-searchbar 
+    placeholder="Buscar quiz..." 
+    [(ngModel)]="searchTerm" 
+    (ionInput)="filterQuizzes()" 
+    animated>
+  </ion-searchbar>
+
+  <!-- Estado de carga -->
+  <div *ngIf="isLoading" class="ion-text-center ion-padding">
+    <ion-spinner name="circular"></ion-spinner>
+    <p>Cargando cuestionarios...</p>
+  </div>
+
+  <!-- Mensaje sin quizzes -->
+  <ion-card *ngIf="!isLoading && filteredQuizzes.length === 0">
+    <ion-card-header>
+      <ion-card-title>No hay cuestionarios</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <p>No se encontraron cuestionarios. Puedes crear uno nuevo haciendo clic en el botón "+".</p>
+      <ion-button expand="block" (click)="createNewQuiz()">
+        <ion-icon name="add-outline" slot="start"></ion-icon>
+        Crear nuevo cuestionario
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Listado de quizzes -->
+  <div *ngIf="!isLoading && filteredQuizzes.length > 0">
+    <ion-card *ngFor="let quiz of filteredQuizzes">
+      <ion-card-header>
+        <ion-card-title>{{ quiz.title }}</ion-card-title>
+        <ion-card-subtitle>
+          <ion-icon name="help-circle-outline"></ion-icon> {{ quiz.questions.length }} preguntas
+        </ion-card-subtitle>
+      </ion-card-header>
+
+      <ion-card-content>
+        <p>{{ quiz.description || 'Sin descripción' }}</p>
+        
+        <div class="quiz-metadata">
+          <ion-chip outline>
+            <ion-icon name="time-outline"></ion-icon>
+            <ion-label>{{ formatDate(quiz.createdAt) }}</ion-label>
+          </ion-chip>
+        </div>
+
+        <div class="quiz-actions">
+          <ion-button fill="clear" color="primary" (click)="viewQuiz(quiz.id!)">
+            <ion-icon name="eye-outline" slot="start"></ion-icon>
+            Ver
+          </ion-button>
+          <ion-button fill="clear" color="secondary" (click)="editQuiz(quiz)">
+            <ion-icon name="create-outline" slot="start"></ion-icon>
+            Editar
+          </ion-button>
+          <ion-button fill="clear" color="danger" (click)="confirmDelete(quiz)">
+            <ion-icon name="trash-outline" slot="start"></ion-icon>
+            Eliminar
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- FAB Button para crear nuevo quiz -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button (click)="createNewQuiz()">
+      <ion-icon name="add-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>

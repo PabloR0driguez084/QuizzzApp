@@ -1,0 +1,163 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Nuevo Quiz</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Nuevo Quiz</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <ion-segment [(ngModel)]="selectedMode" (ionChange)="resetForm()">
+    <ion-segment-button value="manual">
+      <ion-label>Crear manual</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="file">
+      <ion-label>Cargar archivo</ion-label>
+    </ion-segment-button>
+  </ion-segment>
+
+  <!-- Modo de carga de archivo -->
+  <div *ngIf="selectedMode === 'file'">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Cargar archivo Excel/CSV</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-item>
+          <input type="file" (change)="onFileChange($event)" accept=".xlsx, .xls, .csv" />
+        </ion-item>
+        <ion-button expand="block" (click)="processFile()" [disabled]="!selectedFile">
+          Cargar preguntas
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Modo de creación manual -->
+  <div *ngIf="selectedMode === 'manual'">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Información del Quiz</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-item>
+          <ion-label position="floating">Título del Quiz</ion-label>
+          <ion-input [(ngModel)]="quizTitle"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="floating">Descripción</ion-label>
+          <ion-textarea [(ngModel)]="quizDescription"></ion-textarea>
+        </ion-item>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Formulario para agregar preguntas -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Agregar Pregunta</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-item>
+          <ion-label position="floating">Texto de la pregunta</ion-label>
+          <ion-input [(ngModel)]="currentQuestion.text" (ionChange)="updateQuestionText($event)"></ion-input>
+        </ion-item>
+
+        <!-- Opciones de respuesta -->
+        <ion-list>
+          <ion-list-header>
+            <ion-label>Opciones (la primera será la correcta)</ion-label>
+          </ion-list-header>
+
+          <ion-item *ngFor="let option of currentQuestion.options; let i = index">
+            <ion-label position="stacked">Opción {{ i + 1 }}</ion-label>
+            <ion-input 
+              [value]="currentQuestion.options[i]" 
+              (ionChange)="updateOptionText(i, $event)">
+            </ion-input>
+            <ion-button slot="end" fill="clear" color="danger" *ngIf="i > 1" (click)="removeOption(i)">
+              <ion-icon name="trash-outline"></ion-icon>
+            </ion-button>
+          </ion-item>
+
+          <ion-button expand="block" fill="outline" (click)="addOption()">
+            Añadir opción
+          </ion-button>
+        </ion-list>
+
+        <div class="ion-padding">
+          <ion-button expand="block" (click)="addQuestion()">
+            Guardar pregunta
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Lista de preguntas agregadas -->
+    <ion-card *ngIf="questions.length > 0">
+      <ion-card-header>
+        <ion-card-title>Preguntas ({{ questions.length }})</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-list>
+          <ion-item *ngFor="let question of questions; let i = index">
+            <ion-label>
+              <h2>{{ question.text }}</h2>
+              <p *ngFor="let option of question.options; let j = index" [class.correct-answer]="j === 0">
+                {{ j + 1 }}. {{ option }}
+              </p>
+            </ion-label>
+            <ion-buttons slot="end">
+              <ion-button color="danger" (click)="removeQuestion(i)">
+                <ion-icon name="trash-outline"></ion-icon>
+              </ion-button>
+            </ion-buttons>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
+
+    <div class="ion-padding" *ngIf="questions.length > 0">
+      <ion-button expand="block" color="success" (click)="saveQuiz()">
+        Guardar Quiz
+      </ion-button>
+    </div>
+  </div>
+
+  <!-- Previsualización de preguntas cargadas desde archivo -->
+  <ion-card *ngIf="selectedMode === 'file' && questions.length > 0">
+    <ion-card-header>
+      <ion-card-title>Preguntas cargadas</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-item>
+        <ion-label position="floating">Título del Quiz</ion-label>
+        <ion-input [(ngModel)]="quizTitle"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-label position="floating">Descripción</ion-label>
+        <ion-textarea [(ngModel)]="quizDescription"></ion-textarea>
+      </ion-item>
+
+      <ion-list>
+        <ion-item *ngFor="let question of questions; let i = index">
+          <ion-label>
+            <h2>{{ question.text }}</h2>
+            <p *ngFor="let option of question.options; let j = index" [class.correct-answer]="j === 0">
+              {{ j + 1 }}. {{ option }}
+            </p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+
+      <div class="ion-padding">
+        <ion-button expand="block" color="success" (click)="saveQuiz()">
+          Guardar Quiz
+        </ion-button>
+      </div>
+    </ion-card-content>
+  </ion-card>
+</ion-content>
