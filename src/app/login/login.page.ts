@@ -1,14 +1,15 @@
+// login.page.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { 
-  IonContent, 
-  IonHeader, 
-  IonTitle, 
-  IonToolbar, 
-  IonButton, 
-  IonItem, 
-  IonLabel, 
+import {
+  IonContent,
+  IonHeader,
+  IonTitle,
+  IonToolbar,
+  IonButton,
+  IonItem,
+  IonLabel,
   IonInput,
   IonCheckbox,
   IonIcon,
@@ -27,17 +28,17 @@ import { AuthService } from '../services/auth.service';
   styleUrls: ['./login.page.scss'],
   standalone: true,
   imports: [
-    IonContent, 
-    IonHeader, 
-    IonTitle, 
-    IonToolbar, 
+    IonContent,
+    IonHeader,
+    IonTitle,
+    IonToolbar,
     IonButton,
     IonItem,
     IonLabel,
     IonInput,
     IonCheckbox,
     IonIcon,
-    CommonModule, 
+    CommonModule,
     FormsModule,
     ReactiveFormsModule
   ]
@@ -90,15 +91,22 @@ export class LoginPage implements OnInit {
       try {
         const { email, password } = this.loginForm.value;
         await this.authService.loginWithEmail(email, password);
+        const userData = await this.authService.getCurrentUserData();
         
+        // Asegúrate de que userData tenga el campo role
+        const role = userData?.role ?? 'user';  // Asigna un rol por defecto si no existe
+  
         await loading.dismiss();
         this.showSuccessToast('Inicio de sesión exitoso');
+  
+        this.redirectByRole(role);
       } catch (error: any) {
         await loading.dismiss();
         this.showErrorToast(this.getAuthErrorMessage(error.code));
       }
     }
   }
+  
 
   async register() {
     if (this.registerForm.valid) {
@@ -106,7 +114,7 @@ export class LoginPage implements OnInit {
       try {
         const { email, password, fullName } = this.registerForm.value;
         await this.authService.registerWithEmail(email, password, fullName);
-        
+
         await loading.dismiss();
         this.showSuccessToast('Registro exitoso! Bienvenido');
         this.router.navigate(['/profile']);
@@ -121,20 +129,37 @@ export class LoginPage implements OnInit {
     const loading = await this.showLoading('Iniciando sesión con Google...');
     try {
       await this.authService.loginWithGoogle();
-      
+  
+      let userData = await this.authService.getCurrentUserData();
+  
+      // Asegúrate de que userData existe
+      if (!userData) {
+        throw new Error('No se encontró datos del usuario después del login con Google');
+      }
+  
+      const role = userData?.role ?? 'user';  // Usa 'user' como rol predeterminado si no se encuentra
+  
       await loading.dismiss();
       this.showSuccessToast('Inicio de sesión con Google exitoso');
+      this.redirectByRole(role);
     } catch (error: any) {
       await loading.dismiss();
       console.error('Error en login con Google:', error);
       this.showErrorToast(this.getAuthErrorMessage(error.code));
     }
   }
+  
 
   async registerWithGoogle() {
-    // En realidad, el proceso es el mismo que loginWithGoogle
-    // Firebase automáticamente creará una cuenta si no existe
     await this.loginWithGoogle();
+  }
+
+  private redirectByRole(role: string) {
+    if (role === 'admin') {
+      this.router.navigate(['/admin-profile']);
+    } else {
+      this.router.navigate(['/user-profile']);
+    }
   }
 
   async forgotPassword() {

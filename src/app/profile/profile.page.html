@@ -1,37 +1,40 @@
-import { Component, OnInit } from '@angular/core';
-import { doc, docData, updateDoc } from '@angular/fire/firestore';
-import { Auth } from '@angular/fire/auth';
-import { Firestore } from '@angular/fire/firestore';
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Perfil</ion-title>
+  </ion-toolbar>
+</ion-header>
 
-@Component({
-  selector: 'app-profile',
-  templateUrl: './profile.page.html',
-  styleUrls: ['./profile.page.scss'],
-})
-export class ProfilePage implements OnInit {
-  userProfile: any = {};
-  uid: string | null = null;
+<ion-content class="ion-padding">
 
-  constructor(private auth: Auth, private firestore: Firestore) {}
+  <ion-item>
+    <ion-label position="stacked">Nombre</ion-label>
+    <ion-input [(ngModel)]="userProfile.name"></ion-input>
+  </ion-item>
 
-  async ngOnInit() {
-    const user = this.auth.currentUser;
-    if (user) {
-      this.uid = user.uid;
-      const profileRef = doc(this.firestore, 'users', this.uid);
-      docData(profileRef).subscribe(data => {
-        this.userProfile = data;
-      });
-    }
-  }
+  <ion-item>
+    <ion-label position="stacked">Edad</ion-label>
+    <ion-input type="number" [(ngModel)]="userProfile.age"></ion-input>
+  </ion-item>
 
-  async updateProfile() {
-    if (this.uid) {
-      const profileRef = doc(this.firestore, 'users', this.uid);
-      await updateDoc(profileRef, {
-        name: this.userProfile.name,
-        // otros campos que quieras editar
-      });
-    }
-  }
-}
+  <ion-item>
+    <ion-label position="stacked">Foto (URL)</ion-label>
+    <ion-input [(ngModel)]="userProfile.photoUrl"></ion-input>
+  </ion-item>
+
+  <ion-item *ngIf="userProfile.photoUrl">
+    <ion-thumbnail slot="start">
+      <img [src]="userProfile.photoUrl">
+    </ion-thumbnail>
+    <ion-label>Vista previa</ion-label>
+  </ion-item>
+
+  <ion-item>
+    <ion-label position="stacked">Descripción</ion-label>
+    <ion-textarea rows="4" [(ngModel)]="userProfile.description"></ion-textarea>
+  </ion-item>
+
+  <ion-button expand="full" class="ion-margin-top" (click)="updateProfile()">
+    Guardar Cambios
+  </ion-button>
+
+</ion-content>

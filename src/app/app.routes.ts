@@ -17,6 +17,10 @@ export const routes: Routes = [
     // canActivate: [GuardianService]
   },
   {
+    path: 'profile',
+    loadChildren: () => import('./profile/profile.routes').then(m => m.routes)
+  },  
+  {
     path: 'historial',
     loadComponent: () => import('./historial/historial.page').then(m => m.HistorialPage)
     // canActivate: [GuardianService]

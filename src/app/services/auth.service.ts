@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { 
-  Auth, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
+import {
+  Auth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signOut,
   GoogleAuthProvider,
   signInWithPopup,
@@ -13,6 +13,8 @@ import {
   getRedirectResult,
   updateProfile
 } from '@angular/fire/auth';
+import { AngularFirestore } from '@angular/fire/compat/firestore';
+import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { BehaviorSubject, Observable, from, throwError } from 'rxjs';
 import { Router } from '@angular/router';
 import { catchError } from 'rxjs/operators';
@@ -31,43 +33,47 @@ interface Credentials {
   password: string;
 }
 
+// Interface to define user data from Firestore
+interface UserData {
+  role: string;
+  email: string;
+  fullName: string;
+}
+
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$: Observable<User | null> = this.currentUserSubject.asObservable();
-  
+
   // Variable for temporary credentials storage
   private tempCredentials: Credentials | null = null;
 
   constructor(
     private auth: Auth,
-    private router: Router
+    private router: Router,
+    private afAuth: AngularFireAuth,
+    private firestore: AngularFirestore
   ) {
-    // Observe authentication state changes
-    this.auth.onAuthStateChanged(user => {
+    this.auth.onAuthStateChanged((user) => {
       console.log('Auth State Changed:', user);
       this.currentUserSubject.next(user);
     });
   }
 
-  // Method to store temporary credentials
   storeTemporaryCredentials(email: string, password: string): void {
     this.tempCredentials = { email, password };
   }
 
-  // Method to retrieve temporary credentials
   getTemporaryCredentials(): Credentials | null {
     return this.tempCredentials;
   }
 
-  // Method to clear temporary credentials
   clearTemporaryCredentials(): void {
     this.tempCredentials = null;
   }
 
-  // Private method for centralized authentication error handling
   private handleAuthError(error: any): Observable<never> {
     let errorMessage = 'An unknown error occurred';
     let errorCode = 'auth/unknown-error';
@@ -107,15 +113,20 @@ export class AuthService {
     }
 
     console.error('Authentication Error:', errorCode, errorMessage);
-    
+
     return throwError(() => new AuthenticationError(errorCode, errorMessage));
   }
 
-  // Login with email and password
   async loginWithEmail(email: string, password: string): Promise<UserCredential> {
     try {
       const userCredential = await signInWithEmailAndPassword(this.auth, email, password);
       console.log('Email Login Successful:', userCredential.user);
+
+      const userData = await this.getCurrentUserData();
+      if (userData?.role) {
+        console.log('User Role:', userData.role);
+      }
+
       this.router.navigate(['/home']);
       return userCredential;
     } catch (error: any) {
@@ -124,16 +135,25 @@ export class AuthService {
     }
   }
 
-  // Register with email and password
-  async registerWithEmail(email: string, password: string, displayName?: string): Promise<UserCredential> {
+  async registerWithEmail(
+    email: string,
+    password: string,
+    displayName?: string,
+    role: string = 'student'
+  ): Promise<UserCredential> {
     try {
       const userCredential = await createUserWithEmailAndPassword(this.auth, email, password);
-      
-      // Optional: Update user profile
+
+      await this.firestore.collection('users').doc(userCredential.user.uid).set({
+        fullName: displayName || email,
+        email: email,
+        role: role,
+      });
+
       if (displayName && userCredential.user) {
         await updateProfile(userCredential.user, { displayName });
       }
-      
+
       console.log('Email Registration Successful:', userCredential.user);
       this.router.navigate(['/home']);
       return userCredential;
@@ -143,12 +163,10 @@ export class AuthService {
     }
   }
 
-  // Login with Google (Popup Method with Redirect Fallback)
   async loginWithGoogle(): Promise<UserCredential> {
     const provider = new GoogleAuthProvider();
-    
+
     try {
-      // First attempt popup method
       const userCredential = await signInWithPopup(this.auth, provider);
       console.log('Google Login (Popup) Successful:', userCredential.user);
       this.router.navigate(['/home']);
@@ -156,12 +174,10 @@ export class AuthService {
     } catch (error: any) {
       console.error('Google Login Popup Error:', error);
 
-      // If popup fails, try redirect method
       if (error.code === 'auth/popup-closed-by-user') {
         try {
           await signInWithRedirect(this.auth, provider);
           console.log('Redirecting to Google Login');
-          // Redirect will handle further authentication
           return Promise.reject(error);
         } catch (redirectError) {
           console.error('Google Redirect Error:', redirectError);
@@ -172,7 +188,6 @@ export class AuthService {
     }
   }
 
-  // Handle Google Redirect Result
   async handleGoogleRedirectResult(): Promise<UserCredential | null> {
     try {
       const result = await getRedirectResult(this.auth);
@@ -197,7 +212,6 @@ export class AuthService {
     }
   }
 
-  // Send password reset email
   async resetPassword(email: string): Promise<void> {
     try {
       await sendPasswordResetEmail(this.auth, email);
@@ -208,7 +222,6 @@ export class AuthService {
     }
   }
 
-  // Logout
   async logout(): Promise<void> {
     try {
       await signOut(this.auth);
@@ -220,13 +233,27 @@ export class AuthService {
     }
   }
 
-  // Get current user
   get currentUser(): User | null {
     return this.auth.currentUser;
   }
 
-  // Check if user is authenticated
   get isAuthenticated(): boolean {
     return !!this.auth.currentUser;
+  }
+
+  // 🔧 CORREGIDO: Tipado seguro
+  async getCurrentUserData(): Promise<UserData | null> {
+    const user = await this.afAuth.currentUser;
+    if (!user) return null;
+    const doc = await this.firestore.collection('users').doc(user.uid).get().toPromise();
+    return doc?.data() as UserData;
+  }
+
+  async getUserRole(): Promise<string | null> {
+    const user = await this.afAuth.currentUser;
+    if (!user) return null;
+
+    const doc = await this.firestore.collection('users').doc(user.uid).get().toPromise();
+    return (doc?.data() as UserData)?.role || null;
   }
 }
