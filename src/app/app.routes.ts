@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { GuardianService } from './services/guardian/guardian.service'; // Desactivado temporalmente
+import { GuardianService } from './services/guardian/guardian.service';
 
 export const routes: Routes = [
   {
@@ -13,29 +13,34 @@ export const routes: Routes = [
   },
   {
     path: 'home',
-    loadComponent: () => import('./home/home.page').then(m => m.HomePage)
-    // canActivate: [GuardianService]
+    loadComponent: () => import('./home/home.page').then(m => m.HomePage),
+    canActivate: [GuardianService] // Protege esta ruta para usuarios autenticados
   },
   {
     path: 'profile',
-    loadChildren: () => import('./profile/profile.routes').then(m => m.routes)
-  },  
+    loadChildren: () => import('./profile/profile.routes').then(m => m.routes),
+    canActivate: [GuardianService] // Protege esta ruta para usuarios autenticados
+  },
   {
     path: 'historial',
-    loadComponent: () => import('./historial/historial.page').then(m => m.HistorialPage)
-    // canActivate: [GuardianService]
+    loadComponent: () => import('./historial/historial.page').then(m => m.HistorialPage),
+    canActivate: [GuardianService] // Protege esta ruta para usuarios autenticados
   },
   {
     path: 'resultado',
-    loadComponent: () => import('./resultado/resultado.page').then(m => m.ResultadoPage)
+    loadComponent: () => import('./resultado/resultado.page').then(m => m.ResultadoPage),
+    canActivate: [GuardianService] // Protege esta ruta para usuarios autenticados
   },
   {
     path: 'newquizz',
-    loadComponent: () => import('./newquizz/newquizz.page').then( m => m.NewquizzPage)
+    loadComponent: () => import('./newquizz/newquizz.page').then(m => m.NewquizzPage),
+    canActivate: [GuardianService],
+    data: { requiredRole: 'admin' } // Solo administradores pueden crear quizzes
   },
   {
     path: 'myquizz',
-    loadComponent: () => import('./myquizz/myquizz.page').then( m => m.MyquizzPage)
+    loadComponent: () => import('./myquizz/myquizz.page').then(m => m.MyquizzPage),
+    canActivate: [GuardianService],
+    data: { requiredRole: 'admin' } // Solo administradores pueden ver sus quizzes
   }
-
 ];

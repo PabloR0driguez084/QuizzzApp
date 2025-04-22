@@ -28,7 +28,7 @@ bootstrapApplication(AppComponent, {
     provideAuth(() => getAuth()),
     provideStorage(() => getStorage()),
     provideDatabase(() => getDatabase()),
-    provideDatabase(() => getDatabase())
+    // Eliminar la línea duplicada de provideDatabase
   ],
 }).then(() => {
   // Register PWA elements after initialization

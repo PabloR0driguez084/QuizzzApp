@@ -11,10 +11,15 @@ import {
   UserCredential,
   sendPasswordResetEmail,
   getRedirectResult,
-  updateProfile
+  updateProfile,
+  onAuthStateChanged
 } from '@angular/fire/auth';
-import { AngularFirestore } from '@angular/fire/compat/firestore';
-import { AngularFireAuth } from '@angular/fire/compat/auth';
+import {
+  Firestore,
+  doc,
+  getDoc,
+  setDoc
+} from '@angular/fire/firestore';
 import { BehaviorSubject, Observable, from, throwError } from 'rxjs';
 import { Router } from '@angular/router';
 import { catchError } from 'rxjs/operators';
@@ -53,10 +58,9 @@ export class AuthService {
   constructor(
     private auth: Auth,
     private router: Router,
-    private afAuth: AngularFireAuth,
-    private firestore: AngularFirestore
+    private firestore: Firestore
   ) {
-    this.auth.onAuthStateChanged((user) => {
+    onAuthStateChanged(this.auth, (user) => {
       console.log('Auth State Changed:', user);
       this.currentUserSubject.next(user);
     });
@@ -131,7 +135,7 @@ export class AuthService {
       return userCredential;
     } catch (error: any) {
       console.error('Email Login Error:', error);
-      throw this.handleAuthError(error).toPromise();
+      throw this.handleAuthError(error);
     }
   }
 
@@ -144,7 +148,7 @@ export class AuthService {
     try {
       const userCredential = await createUserWithEmailAndPassword(this.auth, email, password);
 
-      await this.firestore.collection('users').doc(userCredential.user.uid).set({
+      await setDoc(doc(this.firestore, 'users', userCredential.user.uid), {
         fullName: displayName || email,
         email: email,
         role: role,
@@ -159,7 +163,7 @@ export class AuthService {
       return userCredential;
     } catch (error: any) {
       console.error('Email Registration Error:', error);
-      throw this.handleAuthError(error).toPromise();
+      throw this.handleAuthError(error);
     }
   }
 
@@ -169,6 +173,18 @@ export class AuthService {
     try {
       const userCredential = await signInWithPopup(this.auth, provider);
       console.log('Google Login (Popup) Successful:', userCredential.user);
+      
+      // Check if user already exists in Firestore, if not create entry
+      const userDoc = await getDoc(doc(this.firestore, 'users', userCredential.user.uid));
+      
+      if (!userDoc.exists()) {
+        await setDoc(doc(this.firestore, 'users', userCredential.user.uid), {
+          fullName: userCredential.user.displayName || userCredential.user.email,
+          email: userCredential.user.email,
+          role: 'student', // Default role for Google sign-in
+        });
+      }
+      
       this.router.navigate(['/home']);
       return userCredential;
     } catch (error: any) {
@@ -179,12 +195,12 @@ export class AuthService {
           await signInWithRedirect(this.auth, provider);
           console.log('Redirecting to Google Login');
           return Promise.reject(error);
-        } catch (redirectError) {
+        } catch (redirectError: any) {
           console.error('Google Redirect Error:', redirectError);
-          throw this.handleAuthError(redirectError).toPromise();
+          throw this.handleAuthError(redirectError);
         }
       }
-      throw this.handleAuthError(error).toPromise();
+      throw this.handleAuthError(error);
     }
   }
 
@@ -195,6 +211,17 @@ export class AuthService {
         console.log('Google Redirect Result:', result);
 
         if (result.user) {
+          // Check if user already exists in Firestore, if not create entry
+          const userDoc = await getDoc(doc(this.firestore, 'users', result.user.uid));
+          
+          if (!userDoc.exists()) {
+            await setDoc(doc(this.firestore, 'users', result.user.uid), {
+              fullName: result.user.displayName || result.user.email,
+              email: result.user.email,
+              role: 'student', // Default role for Google sign-in
+            });
+          }
+          
           console.log('Google Redirect Authentication Successful:', result.user);
           this.router.navigate(['/home']);
           return result;
@@ -208,7 +235,7 @@ export class AuthService {
       }
     } catch (error: any) {
       console.error('Google Redirect Error:', error);
-      throw this.handleAuthError(error).toPromise();
+      throw this.handleAuthError(error);
     }
   }
 
@@ -218,7 +245,7 @@ export class AuthService {
       console.log('Password reset email sent successfully');
     } catch (error: any) {
       console.error('Password Reset Error:', error);
-      throw this.handleAuthError(error).toPromise();
+      throw this.handleAuthError(error);
     }
   }
 
@@ -241,19 +268,34 @@ export class AuthService {
     return !!this.auth.currentUser;
   }
 
-  // 🔧 CORREGIDO: Tipado seguro
   async getCurrentUserData(): Promise<UserData | null> {
-    const user = await this.afAuth.currentUser;
-    if (!user) return null;
-    const doc = await this.firestore.collection('users').doc(user.uid).get().toPromise();
-    return doc?.data() as UserData;
+    if (!this.auth.currentUser) return null;
+    
+    try {
+      const userDoc = await getDoc(doc(this.firestore, 'users', this.auth.currentUser.uid));
+      if (userDoc.exists()) {
+        return userDoc.data() as UserData;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting user data:', error);
+      return null;
+    }
   }
 
   async getUserRole(): Promise<string | null> {
-    const user = await this.afAuth.currentUser;
-    if (!user) return null;
-
-    const doc = await this.firestore.collection('users').doc(user.uid).get().toPromise();
-    return (doc?.data() as UserData)?.role || null;
+    if (!this.auth.currentUser) return null;
+    
+    try {
+      const userDoc = await getDoc(doc(this.firestore, 'users', this.auth.currentUser.uid));
+      if (!userDoc.exists()) {
+        console.warn('User document not found in Firestore');
+        return null;
+      }
+      return userDoc.data()?.['role'] || null;
+    } catch (error) {
+      console.error('Error getting user role:', error);
+      return null;
+    }
   }
 }
