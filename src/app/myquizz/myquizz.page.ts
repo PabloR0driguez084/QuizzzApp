@@ -48,7 +48,8 @@ import {
   helpCircleOutline,
   timeOutline,
   personOutline,
-  closeOutline
+  closeOutline,
+  copyOutline  
 } from 'ionicons/icons';
 import { DatePipe } from '@angular/common';
 import { QuizDetailsModalComponent } from '../quiz-details-modal/quiz-details-modal.component';
@@ -115,7 +116,8 @@ export class MyquizzPage implements OnInit {
       helpCircleOutline,
       timeOutline,
       personOutline,
-      closeOutline
+      closeOutline,
+      copyOutline  
     });
   }
 

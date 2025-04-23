@@ -1,22 +1,214 @@
-.historial-content {
-  padding: 16px;
+/* Estilo general de la página */
+ion-content {
+  --padding-start: 8px;
+  --padding-end: 8px;
+  --padding-top: 8px;
+  --padding-bottom: 16px;
 }
 
+/* Contenedor de carga */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  padding: 20px;
+}
+
+.loading-container p {
+  margin-top: 10px;
+  color: var(--ion-color-medium);
+  font-size: 16px;
+}
+
+/* Mensaje de error */
+.error-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  margin: 20px;
+  background-color: rgba(var(--ion-color-danger-rgb), 0.1);
+  border-radius: 8px;
+}
+
+.error-message ion-icon {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+/* Mensaje vacío */
+.empty-message {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 50vh;
+  text-align: center;
+  padding: 20px;
+}
+
+.empty-message ion-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  color: var(--ion-color-medium);
+}
+
+.empty-message p {
+  font-size: 18px;
+  color: var(--ion-color-medium);
+  margin-bottom: 8px;
+}
+
+.empty-message .suggestion {
+  font-size: 14px;
+  color: var(--ion-color-medium-shade);
+}
+
+/* Estilos para el historial */
+.date-label {
+  font-size: 12px;
+  color: var(--ion-color-medium);
+  margin-top: 2px;
+  margin-bottom: 8px;
+}
+
+.score-container {
+  display: flex;
+  align-items: center;
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+.score-detail {
+  margin-left: 8px;
+  font-size: 14px;
+  color: var(--ion-color-dark);
+}
+
+.points-detail {
+  margin-left: 8px;
+  font-size: 14px;
+  color: var(--ion-color-dark);
+  font-weight: bold;
+}
+
+.rank-label {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: var(--ion-color-tertiary);
+}
+
+.rank-label ion-icon {
+  margin-right: 4px;
+}
+
+/* Estilos para los rankings */
+ion-accordion {
+  margin-bottom: 8px;
+  
+  ion-item[slot="header"] {
+    --background: var(--ion-color-light);
+    
+    h2 {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .user-position {
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      
+      ion-badge {
+        font-size: 12px;
+        padding: 3px 6px;
+      }
+    }
+  }
+}
+
+.ranking-content {
+  background: var(--ion-color-light-shade);
+  padding-bottom: 8px;
+  
+  .user-best {
+    --background: rgba(var(--ion-color-tertiary-rgb), 0.1);
+    border-left: 3px solid var(--ion-color-tertiary);
+    margin: 8px 0;
+  }
+  
+  .score-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+    
+    ion-badge {
+      font-size: 14px;
+    }
+    
+    .score-detail, .points-detail {
+      font-size: 12px;
+      color: var(--ion-color-medium);
+    }
+  }
+  
+  .date-label {
+    font-size: 11px;
+    color: var(--ion-color-medium);
+    margin-top: 4px;
+    margin-bottom: 0;
+  }
+  
+  .highlight-user {
+    --background: rgba(var(--ion-color-tertiary-rgb), 0.1);
+  }
+  
+  .empty-ranking {
+    --background: transparent;
+    
+    p {
+      color: var(--ion-color-medium);
+      font-style: italic;
+      margin: 16px 0;
+    }
+  }
+}
+
+ion-list-header {
+  padding-left: 16px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--ion-color-medium);
+}
+
+// Estilos para mensajes vacíos
 .empty-message {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 70vh;
-  color: #888;
+  padding: 32px 16px;
   text-align: center;
-
+  
   ion-icon {
     font-size: 48px;
-    margin-bottom: 12px;
+    color: var(--ion-color-medium);
+    margin-bottom: 16px;
   }
-
+  
   p {
-    font-size: 18px;
+    margin: 8px 0;
+    color: var(--ion-color-medium);
+    
+    &.suggestion {
+      font-size: 14px;
+      font-style: italic;
+    }
   }
 }

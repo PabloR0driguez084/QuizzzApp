@@ -61,8 +61,17 @@
           <ion-icon name="help-circle-outline"></ion-icon> {{ quiz.questions.length }} preguntas
         </ion-card-subtitle>
       </ion-card-header>
-
+      
       <ion-card-content>
+        <!-- Código único del quiz destacado -->
+        <div class="code-container">
+          <strong>Código del quiz:</strong>
+          <ion-chip color="tertiary" class="code-chip">
+            <ion-label class="code-label">{{ quiz.codeNumber || 'No disponible' }}</ion-label>
+            <ion-icon name="copy-outline"></ion-icon>
+          </ion-chip>
+        </div>
+        
         <p>{{ quiz.description || 'Sin descripción' }}</p>
         
         <div class="quiz-metadata">
@@ -71,7 +80,7 @@
             <ion-label>{{ formatDate(quiz.createdAt) }}</ion-label>
           </ion-chip>
         </div>
-
+        
         <div class="quiz-actions">
           <ion-button fill="clear" color="primary" (click)="viewQuiz(quiz.id!)">
             <ion-icon name="eye-outline" slot="start"></ion-icon>
