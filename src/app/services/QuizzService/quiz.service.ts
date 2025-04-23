@@ -35,6 +35,7 @@ export interface Quiz {
   updatedAt?: Date;
   userDisplayName?: string;
   userEmail?: string;
+  codeNumber?: string; // Nuevo campo para el código numérico
 }
 
 @Injectable({
@@ -48,8 +49,58 @@ export class QuizService {
     private authService: AuthService
   ) { }
 
+  // Generar un código numérico aleatorio
+  private generateRandomCode(length: number): string {
+    let result = '';
+    const characters = '0123456789';
+    const charactersLength = characters.length;
+    for (let i = 0; i < length; i++) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    // Asegurarse de que el primer dígito no sea cero
+    if (result.charAt(0) === '0') {
+      result = characters.charAt(Math.floor(Math.random() * (charactersLength - 1)) + 1) + result.substring(1);
+    }
+    return result;
+  }
+
+  // Verificar si un código ya existe
+  private async isCodeUnique(code: string): Promise<boolean> {
+    const quizCollection = collection(this.firestore, this.collectionName);
+    const codeQuery = query(quizCollection, where('codeNumber', '==', code));
+    const snapshot = await getDocs(codeQuery);
+    return snapshot.empty;
+  }
+
+  // Generar un código único
+  private async generateUniqueCode(): Promise<string> {
+    // Determinar una longitud aleatoria entre 4 y 10 dígitos
+    const codeLength = Math.floor(Math.random() * 7) + 4; // Entre 4 y 10
+    
+    let code = this.generateRandomCode(codeLength);
+    let isUnique = await this.isCodeUnique(code);
+    
+    // Si el código ya existe, seguir intentando hasta encontrar uno único
+    let attempts = 0;
+    const maxAttempts = 10; // Limitar el número de intentos para evitar bucles infinitos
+    
+    while (!isUnique && attempts < maxAttempts) {
+      code = this.generateRandomCode(codeLength);
+      isUnique = await this.isCodeUnique(code);
+      attempts++;
+    }
+    
+    if (!isUnique) {
+      // Si después de varios intentos no encontramos un código único,
+      // aumentamos la longitud para tener más combinaciones posibles
+      return this.generateUniqueCode();
+    }
+    
+    return code;
+  }
+
   // Crear un nuevo quiz
-  createQuiz(quiz: Omit<Quiz, 'id' | 'createdBy' | 'createdAt' | 'userDisplayName' | 'userEmail'>): Observable<string> {
+  createQuiz(quiz: Omit<Quiz, 'id' | 'createdBy' | 'createdAt' | 'userDisplayName' | 'userEmail' | 'codeNumber'>): Observable<string> {
     // Verificar si el usuario está autenticado
     if (!this.authService.isAuthenticated) {
       return throwError(() => new Error('Debes iniciar sesión para crear un quiz'));
@@ -61,23 +112,50 @@ export class QuizService {
       return throwError(() => new Error('Usuario no encontrado'));
     }
 
-    // Preparar el objeto quiz con los datos del usuario
-    const newQuiz: Omit<Quiz, 'id'> = {
-      ...quiz,
-      createdBy: currentUser.uid,
-      createdAt: new Date(),
-      userDisplayName: currentUser.displayName || 'Usuario sin nombre',
-      userEmail: currentUser.email || 'Sin email'
-    };
+    // Primero generamos un código único
+    return from(this.generateUniqueCode()).pipe(
+      switchMap(codeNumber => {
+        // Preparar el objeto quiz con los datos del usuario y el código único
+        const newQuiz: Omit<Quiz, 'id'> = {
+          ...quiz,
+          createdBy: currentUser.uid,
+          createdAt: new Date(),
+          userDisplayName: currentUser.displayName || 'Usuario sin nombre',
+          userEmail: currentUser.email || 'Sin email',
+          codeNumber: codeNumber
+        };
 
-    // Agregar el quiz a Firestore
-    const quizCollection = collection(this.firestore, this.collectionName);
-    
-    return from(addDoc(quizCollection, newQuiz)).pipe(
-      map(docRef => docRef.id),
+        // Agregar el quiz a Firestore
+        const quizCollection = collection(this.firestore, this.collectionName);
+        
+        return from(addDoc(quizCollection, newQuiz)).pipe(
+          map(docRef => docRef.id)
+        );
+      }),
       catchError(error => {
         console.error('Error al crear el quiz:', error);
         return throwError(() => new Error('Error al guardar el quiz: ' + error.message));
+      })
+    );
+  }
+
+  // Obtener un quiz por su código numérico
+  getQuizByCode(code: string): Observable<Quiz | null> {
+    const quizCollection = collection(this.firestore, this.collectionName);
+    const codeQuery = query(quizCollection, where('codeNumber', '==', code));
+    
+    return from(getDocs(codeQuery)).pipe(
+      map(snapshot => {
+        if (snapshot.empty) {
+          return null;
+        }
+        const doc = snapshot.docs[0];
+        const data = doc.data() as Omit<Quiz, 'id'>;
+        return { id: doc.id, ...data } as Quiz;
+      }),
+      catchError(error => {
+        console.error('Error al buscar quiz por código:', error);
+        return throwError(() => new Error('Error al buscar el quiz: ' + error.message));
       })
     );
   }
@@ -150,68 +228,68 @@ export class QuizService {
   }
 
   // Actualizar un quiz
-updateQuiz(id: string, quizData: Partial<Quiz>): Observable<void> {
-  if (!this.authService.isAuthenticated) {
-    return throwError(() => new Error('Debes iniciar sesión para editar un quiz'));
+  updateQuiz(id: string, quizData: Partial<Quiz>): Observable<void> {
+    if (!this.authService.isAuthenticated) {
+      return throwError(() => new Error('Debes iniciar sesión para editar un quiz'));
+    }
+
+    const currentUser = this.authService.currentUser;
+    
+    if (!currentUser) {
+      return throwError(() => new Error('Usuario no encontrado'));
+    }
+
+    // Primero verificamos que el quiz pertenezca al usuario actual
+    return this.getQuizById(id).pipe(
+      switchMap(quiz => {
+        if (quiz.createdBy !== currentUser.uid) {
+          throw new Error('No tienes permiso para editar este quiz');
+        }
+        
+        // Actualizar el quiz
+        const quizDocRef = doc(this.firestore, this.collectionName, id);
+        const updatedData = {
+          ...quizData,
+          updatedAt: new Date()
+        };
+        
+        // Convertimos la Promise en un Observable
+        return from(updateDoc(quizDocRef, updatedData));
+      }),
+      catchError(error => {
+        console.error('Error al actualizar el quiz:', error);
+        return throwError(() => new Error('Error al actualizar el quiz: ' + error.message));
+      })
+    );
   }
 
-  const currentUser = this.authService.currentUser;
-  
-  if (!currentUser) {
-    return throwError(() => new Error('Usuario no encontrado'));
+  // Eliminar un quiz
+  deleteQuiz(id: string): Observable<void> {
+    if (!this.authService.isAuthenticated) {
+      return throwError(() => new Error('Debes iniciar sesión para eliminar un quiz'));
+    }
+
+    const currentUser = this.authService.currentUser;
+    
+    if (!currentUser) {
+      return throwError(() => new Error('Usuario no encontrado'));
+    }
+
+    // Primero verificamos que el quiz pertenezca al usuario actual
+    return this.getQuizById(id).pipe(
+      switchMap(quiz => {
+        if (quiz.createdBy !== currentUser.uid) {
+          throw new Error('No tienes permiso para eliminar este quiz');
+        }
+        
+        // Eliminar el quiz
+        const quizDocRef = doc(this.firestore, this.collectionName, id);
+        return from(deleteDoc(quizDocRef));
+      }),
+      catchError(error => {
+        console.error('Error al eliminar el quiz:', error);
+        return throwError(() => new Error('Error al eliminar el quiz: ' + error.message));
+      })
+    );
   }
-
-  // Primero verificamos que el quiz pertenezca al usuario actual
-  return this.getQuizById(id).pipe(
-    switchMap(quiz => {
-      if (quiz.createdBy !== currentUser.uid) {
-        throw new Error('No tienes permiso para editar este quiz');
-      }
-      
-      // Actualizar el quiz
-      const quizDocRef = doc(this.firestore, this.collectionName, id);
-      const updatedData = {
-        ...quizData,
-        updatedAt: new Date()
-      };
-      
-      // Convertimos la Promise en un Observable
-      return from(updateDoc(quizDocRef, updatedData));
-    }),
-    catchError(error => {
-      console.error('Error al actualizar el quiz:', error);
-      return throwError(() => new Error('Error al actualizar el quiz: ' + error.message));
-    })
-  );
-}
-
- // Eliminar un quiz
-deleteQuiz(id: string): Observable<void> {
-  if (!this.authService.isAuthenticated) {
-    return throwError(() => new Error('Debes iniciar sesión para eliminar un quiz'));
-  }
-
-  const currentUser = this.authService.currentUser;
-  
-  if (!currentUser) {
-    return throwError(() => new Error('Usuario no encontrado'));
-  }
-
-  // Primero verificamos que el quiz pertenezca al usuario actual
-  return this.getQuizById(id).pipe(
-    switchMap(quiz => {
-      if (quiz.createdBy !== currentUser.uid) {
-        throw new Error('No tienes permiso para eliminar este quiz');
-      }
-      
-      // Eliminar el quiz
-      const quizDocRef = doc(this.firestore, this.collectionName, id);
-      return from(deleteDoc(quizDocRef));
-    }),
-    catchError(error => {
-      console.error('Error al eliminar el quiz:', error);
-      return throwError(() => new Error('Error al eliminar el quiz: ' + error.message));
-    })
-  );
-}
 }

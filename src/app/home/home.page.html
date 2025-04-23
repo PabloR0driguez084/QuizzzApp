@@ -4,20 +4,210 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="home-content">
-
+<!-- Vista principal de la página Home -->
+<ion-content class="home-content" *ngIf="!isModalOpen">
   <!-- Mensaje de bienvenida -->
   <div class="welcome-box">
     <h2>¡Bienvenido a QuizzzApp!</h2>
-    <p>Presiona el botón para comenzar una actividad.</p>
+    <p>Ingresa un código para acceder a un quiz específico, o explora los quizzes disponibles.</p>
   </div>
 
-  <!-- Botón para iniciar el quiz -->
-  <div class="start-button-container">
-    <ion-button expand="block" color="secondary" [routerLink]="['/quiz']">
-      <ion-icon name="play-outline" slot="start"></ion-icon>
-      Iniciar Quiz
+  <!-- Input para código de quiz -->
+  <div class="code-input-container">
+    <ion-item>
+      <ion-label position="floating">Código del Quiz</ion-label>
+      <ion-input [(ngModel)]="quizCode" type="text" placeholder="Ingresa el código"></ion-input>
+    </ion-item>
+    <ion-button expand="block" color="secondary" (click)="loadQuizByCode()" [disabled]="!quizCode">
+      <ion-icon name="search-outline" slot="start"></ion-icon>
+      Buscar Quiz
     </ion-button>
   </div>
 
+  <!-- Botón para explorar quizzes -->
+  <div class="start-button-container">
+    <ion-button expand="block" color="tertiary" [routerLink]="['/quiz']">
+      <ion-icon name="play-outline" slot="start"></ion-icon>
+      Explorar Quizzes
+    </ion-button>
+  </div>
+
+  <!-- Mostrar error si lo hay -->
+  <div class="error-message" *ngIf="errorMessage">
+    <ion-text color="danger">{{ errorMessage }}</ion-text>
+  </div>
+</ion-content>
+
+<!-- Vista del Quiz (Modal integrado en la misma página) -->
+<ion-content *ngIf="isModalOpen">
+  <ion-header>
+    <ion-toolbar color="primary">
+      <ion-title>{{ quizTitle }}</ion-title>
+      <ion-buttons slot="end">
+        <ion-button (click)="closeQuiz()">
+          <ion-icon name="close-outline"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+    </ion-toolbar>
+  </ion-header>
+
+  <!-- Loading spinner -->
+  <div class="ion-padding ion-text-center" *ngIf="isLoading">
+    <ion-spinner></ion-spinner>
+    <p>Cargando quiz...</p>
+  </div>
+
+  <!-- Error message -->
+  <div class="ion-padding" *ngIf="errorMessage">
+    <ion-text color="danger">{{ errorMessage }}</ion-text>
+  </div>
+
+  <!-- Quiz content when available -->
+  <div *ngIf="quiz && !completed && !isLoading">
+    <!-- Progress indicator -->
+    <ion-progress-bar [value]="(currentQuestionIndex + 1) / totalQuestions"></ion-progress-bar>
+    
+    <!-- Timer display con puntos potenciales -->
+    <div class="timer-container">
+      <div class="timer" [ngClass]="getTimerColor()">
+        <ion-icon name="time-outline"></ion-icon>
+        <span>{{ formatTimeRemaining() }}</span>
+        <small class="points-indicator">{{ timeRemaining }} pts posibles</small>
+      </div>
+    </div>
+    
+    <!-- Time progress bar -->
+    <div class="time-progress-container">
+      <div class="time-progress" [style.width.%]="(timeRemaining / 30) * 100"></div>
+    </div>
+    
+    <div class="ion-padding">
+      <!-- Question counter -->
+      <div class="question-counter">
+        <ion-text color="medium">Pregunta {{ currentQuestionIndex + 1 }} de {{ totalQuestions }}</ion-text>
+      </div>
+      
+      <!-- Current question -->
+      <div class="question">
+        <h2>{{ currentQuestion?.text }}</h2>
+      </div>
+      
+      <!-- Answer options -->
+      <ion-list>
+        <ion-item *ngFor="let option of currentQuestion?.options; let i = index" 
+                  (click)="onSelectAnswer(option)">
+          <ion-label>{{ option }}</ion-label>
+          <ion-checkbox slot="start" 
+                      [checked]="selectedAnswers[currentQuestionIndex] === option"
+                      (ionChange)="onSelectAnswer(option)">
+          </ion-checkbox>
+        </ion-item>
+      </ion-list>
+    </div>
+    
+    <!-- Navigation buttons -->
+    <div class="ion-padding navigation-buttons">
+      <ion-button color="medium" [disabled]="currentQuestionIndex === 0" (click)="previousQuestion()">
+        <ion-icon name="arrow-back-outline" slot="start"></ion-icon>
+        Anterior
+      </ion-button>
+      
+      <ion-button color="primary" *ngIf="currentQuestionIndex < totalQuestions - 1" (click)="nextQuestion()" [disabled]="!selectedAnswers[currentQuestionIndex]">
+        Siguiente
+        <ion-icon name="arrow-forward" slot="end"></ion-icon>
+      </ion-button>
+      
+      <ion-button color="success" *ngIf="currentQuestionIndex === totalQuestions - 1" (click)="finishQuiz()" [disabled]="!allQuestionsAnswered()">
+        Finalizar
+        <ion-icon name="checkmark-outline" slot="end"></ion-icon>
+      </ion-button>
+    </div>
+    
+    <!-- Question navigation dots -->
+    <div class="ion-padding question-dots">
+      <ion-button 
+        fill="clear" 
+        size="small" 
+        *ngFor="let q of questionsArray; let i = index" 
+        [color]="selectedAnswers[i] ? 'success' : 'medium'"
+        (click)="goToQuestion(i)">
+        {{ i + 1 }}
+      </ion-button>
+    </div>
+  </div>
+  
+  <!-- Quiz results when completed -->
+  <div *ngIf="completed && !isLoading" class="ion-padding quiz-results">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Resultados del Quiz</ion-card-title>
+      </ion-card-header>
+      
+      <ion-card-content>
+        <!-- Visualización de score y puntos-->
+        <div class="score-container">
+          <div class="score-circle" [style.background]="getScoreColor()">
+            {{ score | number:'1.0-0' }}%
+          </div>
+          <div class="score-details">
+            <p>Respuestas correctas: {{ correctAnswers }} de {{ totalQuestions }}</p>
+            <p>Puntos totales: {{ totalPoints | number:'1.0-0' }} de {{ maxPossiblePoints | number:'1.0-0' }}</p>
+          </div>
+        </div>
+        
+        <!-- Sistema de puntos explicación -->
+        <div class="points-system-info">
+          <h4><ion-icon name="information-circle-outline"></ion-icon> Sistema de puntuación</h4>
+          <p>• Respuesta correcta: Ganas los segundos restantes como puntos</p>
+          <p>• Respuesta incorrecta o tiempo agotado: 0 puntos</p>
+          <p>• Porcentaje: {{ totalPoints | number:'1.0-0' }} / {{ maxPossiblePoints | number:'1.0-0' }} × 100</p>
+        </div>
+        
+        <!-- Answers review con puntos por pregunta -->
+        <div class="answers-review">
+          <h3>Revisión de respuestas</h3>
+          <ion-list>
+            <ion-item *ngFor="let item of answersReview; let i = index">
+              <ion-icon 
+                name="{{ item.isCorrect ? 'checkmark-circle' : 'close-circle' }}" 
+                color="{{ item.isCorrect ? 'success' : 'danger' }}" 
+                slot="start">
+              </ion-icon>
+              <ion-label>
+                <h3>Pregunta {{ i + 1 }}</h3>
+                <p>{{ item.question }}</p>
+                <p><strong>Tu respuesta:</strong> {{ item.selectedOption || 'Sin respuesta' }}</p>
+                <p *ngIf="!item.isCorrect"><strong>Respuesta correcta:</strong> {{ item.correctOption }}</p>
+              </ion-label>
+              <div slot="end" class="question-points">
+                <!-- <span [ngClass]="item.isCorrect ? 'correct-points' : 'incorrect-points'">
+                  {{ item.pointsEarned | number:'1.0-0' }} pts
+                </span>
+                <small *ngIf="item.isCorrect">({{ item.timeRemaining | number:'1.0-0' }}s)</small> -->
+              </div>
+            </ion-item>
+          </ion-list>
+        </div>
+        
+        <!-- Ranking con puntos totales -->
+        <div class="ranking" *ngIf="quizRanking.length > 0">
+          <h3>Ranking</h3>
+          <ion-list>
+            <ion-item *ngFor="let rank of quizRanking; let i = index">
+              <ion-icon name="trophy-outline" slot="start" [color]="i < 3 ? 'warning' : 'medium'"></ion-icon>
+              <ion-label>
+                <h3>#{{ i + 1 }} {{ rank.userName }}</h3>
+                <p>Puntos: {{ rank.totalPoints | number:'1.0-0' }} / {{ rank.maxPossiblePoints | number:'1.0-0' }}</p>
+                <p>Puntuación: {{ rank.score | number:'1.0-0' }}%</p>
+              </ion-label>
+            </ion-item>
+          </ion-list>
+        </div>
+        
+        <ion-button expand="block" color="primary" (click)="closeQuiz()">
+          Volver al inicio
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </div>
 </ion-content>
