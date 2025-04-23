@@ -15,7 +15,9 @@ import {
   listOutline,
   personOutline,
   chevronForwardOutline,
-  alertCircleOutline 
+  alertCircleOutline,
+  chevronUpOutline,
+  chevronDownOutline
 } from 'ionicons/icons';
 
 @Component({
@@ -31,6 +33,7 @@ export class HistorialPage implements OnInit, OnDestroy {
   selectedSegment: 'historial' | 'rankings' = 'historial';
   isLoading: boolean = true;
   errorMessage: string | null = null;
+  expandedRankings: Set<string> = new Set(); // Para controlar qué rankings están expandidos
   
   private subscriptions: Subscription = new Subscription();
 
@@ -45,7 +48,9 @@ export class HistorialPage implements OnInit, OnDestroy {
       'list-outline': listOutline,
       'person-outline': personOutline,
       'chevron-forward-outline': chevronForwardOutline,
-      'alert-circle-outline': alertCircleOutline
+      'alert-circle-outline': alertCircleOutline,
+      'chevron-up': chevronUpOutline,
+      'chevron-down': chevronDownOutline
     });
   }
 
@@ -137,5 +142,18 @@ export class HistorialPage implements OnInit, OnDestroy {
     setTimeout(() => {
       event.target.complete();
     }, 1000);
+  }
+
+  // Nuevos métodos para controlar el estado de los rankings desplegables
+  toggleRanking(quizId: string) {
+    if (this.expandedRankings.has(quizId)) {
+      this.expandedRankings.delete(quizId);
+    } else {
+      this.expandedRankings.add(quizId);
+    }
+  }
+
+  isRankingExpanded(quizId: string): boolean {
+    return this.expandedRankings.has(quizId);
   }
 }

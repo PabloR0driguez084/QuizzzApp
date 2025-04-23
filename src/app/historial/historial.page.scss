@@ -1,4 +1,4 @@
-/* Estilo general de la página */
+/* Estilos generales */
 ion-content {
   --padding-start: 8px;
   --padding-end: 8px;
@@ -79,16 +79,16 @@ ion-content {
   align-items: center;
   margin-top: 6px;
   margin-bottom: 6px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .score-detail {
-  margin-left: 8px;
   font-size: 14px;
   color: var(--ion-color-dark);
 }
 
 .points-detail {
-  margin-left: 8px;
   font-size: 14px;
   color: var(--ion-color-dark);
   font-weight: bold;
@@ -105,110 +105,190 @@ ion-content {
   margin-right: 4px;
 }
 
-/* Estilos para los rankings */
-ion-accordion {
-  margin-bottom: 8px;
-  
-  ion-item[slot="header"] {
-    --background: var(--ion-color-light);
-    
-    h2 {
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-    
-    .user-position {
-      font-size: 12px;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      
-      ion-badge {
-        font-size: 12px;
-        padding: 3px 6px;
-      }
-    }
-  }
+/* NUEVA IMPLEMENTACIÓN PARA RANKINGS COLAPSABLES */
+.rankings-container {
+  padding: 8px;
 }
 
+.quiz-ranking-card {
+  margin-bottom: 16px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background-color: var(--ion-color-light);
+}
+
+.ranking-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background-color: var(--ion-color-light);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+
+.ranking-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ranking-title ion-icon {
+  font-size: 24px;
+}
+
+.ranking-title-text h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ion-color-dark);
+}
+
+.user-position {
+  font-size: 12px;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ranking-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toggle-icon {
+  font-size: 20px;
+  color: var(--ion-color-medium);
+  transition: transform 0.3s ease;
+}
+
+/* Contenido colapsable */
 .ranking-content {
-  background: var(--ion-color-light-shade);
-  padding-bottom: 8px;
-  
-  .user-best {
-    --background: rgba(var(--ion-color-tertiary-rgb), 0.1);
-    border-left: 3px solid var(--ion-color-tertiary);
-    margin: 8px 0;
-  }
-  
-  .score-container {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 6px 0;
-    
-    ion-badge {
-      font-size: 14px;
-    }
-    
-    .score-detail, .points-detail {
-      font-size: 12px;
-      color: var(--ion-color-medium);
-    }
-  }
-  
-  .date-label {
-    font-size: 11px;
-    color: var(--ion-color-medium);
-    margin-top: 4px;
-    margin-bottom: 0;
-  }
-  
-  .highlight-user {
-    --background: rgba(var(--ion-color-tertiary-rgb), 0.1);
-  }
-  
-  .empty-ranking {
-    --background: transparent;
-    
-    p {
-      color: var(--ion-color-medium);
-      font-style: italic;
-      margin: 16px 0;
-    }
-  }
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease-out;
+  background-color: var(--ion-color-light-tint);
 }
 
-ion-list-header {
-  padding-left: 16px;
+.ranking-content.expanded {
+  max-height: 1000px; /* Valor arbitrariamente alto para permitir el contenido */
+  transition: max-height 0.6s ease-in;
+}
+
+/* Tu mejor resultado */
+.user-best {
+  margin: 16px;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: rgba(var(--ion-color-tertiary-rgb), 0.1);
+  border-left: 3px solid var(--ion-color-tertiary);
+}
+
+.user-best-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.user-best-header h3 {
+  margin: 0;
+  flex-grow: 1;
   font-size: 14px;
+  font-weight: 600;
+  color: var(--ion-color-dark);
+}
+
+.user-best-header ion-icon {
+  font-size: 20px;
+}
+
+.user-rank {
+  font-size: 12px;
+}
+
+.user-best-content {
+  padding-left: 28px;
+}
+
+/* Tabla de posiciones */
+.ranking-table {
+  padding: 0 16px 16px;
+}
+
+.ranking-table-title {
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--ion-color-medium);
+  margin: 16px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(var(--ion-color-medium-rgb), 0.2);
 }
 
-// Estilos para mensajes vacíos
-.empty-message {
+.ranking-row {
   display: flex;
-  flex-direction: column;
+  padding: 12px 8px;
+  border-bottom: 1px solid rgba(var(--ion-color-medium-rgb), 0.1);
+}
+
+.ranking-position {
+  display: flex;
   align-items: center;
+  margin-right: 12px;
+}
+
+.ranking-user-info {
+  flex-grow: 1;
+}
+
+.ranking-user-info h3 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.highlight-user {
+  background-color: rgba(var(--ion-color-tertiary-rgb), 0.1);
+  border-left: 3px solid var(--ion-color-tertiary);
+  padding-left: 5px;
+}
+
+.empty-ranking {
+  display: flex;
   justify-content: center;
-  padding: 32px 16px;
+  padding: 20px 0;
+}
+
+.empty-ranking p {
+  color: var(--ion-color-medium);
+  font-style: italic;
   text-align: center;
-  
-  ion-icon {
-    font-size: 48px;
-    color: var(--ion-color-medium);
-    margin-bottom: 16px;
+}
+
+/* Mejora para el tema oscuro */
+@media (prefers-color-scheme: dark) {
+  .quiz-ranking-card {
+    background-color: rgba(var(--ion-color-dark-rgb), 0.8);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
   
-  p {
-    margin: 8px 0;
-    color: var(--ion-color-medium);
-    
-    &.suggestion {
-      font-size: 14px;
-      font-style: italic;
-    }
+  .ranking-header {
+    background-color: rgba(var(--ion-color-dark-rgb), 0.6);
+  }
+  
+  .ranking-content {
+    background-color: rgba(var(--ion-color-dark-rgb), 0.4);
+  }
+  
+  .user-best {
+    background-color: rgba(var(--ion-color-tertiary-rgb), 0.15);
+  }
+  
+  .highlight-user {
+    background-color: rgba(var(--ion-color-tertiary-rgb), 0.15);
   }
 }

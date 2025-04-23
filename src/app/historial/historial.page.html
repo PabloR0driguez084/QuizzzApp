@@ -77,83 +77,93 @@
     </ion-card>
   </div>
 
- <!-- RANKINGS POR QUIZ -->
-<div *ngIf="selectedSegment === 'rankings'">
-  <div *ngIf="!isLoading && quizRankings.length === 0" class="empty-message">
-    <ion-icon name="trophy-outline" size="large"></ion-icon>
-    <p>No hay rankings disponibles.</p>
-    <p class="suggestion">¡Los rankings se actualizan cuando los usuarios completan quizzes!</p>
-  </div>
+  <!-- RANKINGS POR QUIZ (VERSIÓN CON TARJETAS COLAPSABLES) -->
+  <div *ngIf="selectedSegment === 'rankings'">
+    <div *ngIf="!isLoading && quizRankings.length === 0" class="empty-message">
+      <ion-icon name="trophy-outline" size="large"></ion-icon>
+      <p>No hay rankings disponibles.</p>
+      <p class="suggestion">¡Los rankings se actualizan cuando los usuarios completan quizzes!</p>
+    </div>
 
-  <ion-accordion-group *ngIf="!isLoading && quizRankings.length > 0">
-    <ion-accordion *ngFor="let ranking of quizRankings">
-      <!-- Encabezado del Quiz con nombre claro -->
-      <ion-item slot="header" color="light">
-        <ion-icon name="trophy-outline" slot="start" color="warning"></ion-icon>
-        <ion-label>
-          <h2>{{ ranking.quizTitle }}</h2>
-          <p *ngIf="ranking.userRank" class="user-position">
-            Tu posición: <ion-badge color="tertiary">#{{ ranking.userRank }}</ion-badge>
-          </p>
-        </ion-label>
-        <ion-badge slot="end" color="warning" *ngIf="ranking.topAttempts.length > 0">
-          Top: {{ ranking.topAttempts[0].totalPoints | number:'1.0-0' }} pts
-        </ion-badge>
-      </ion-item>
-
-      <!-- Contenido del desplegable: las posiciones -->
-      <div slot="content" class="ranking-content">
-        <!-- Tu mejor resultado -->
-        <ion-item *ngIf="ranking.userBestAttempt" lines="full" class="user-best">
-          <ion-icon name="person-outline" slot="start" color="tertiary"></ion-icon>
-          <ion-label>
-            <h3>Tu mejor resultado</h3>
-            <div class="score-container">
-              <ion-badge color="primary">
-                {{ ranking.userBestAttempt.score | number:'1.0-0' }}%
-              </ion-badge>
-              <span class="score-detail">
-                {{ ranking.userBestAttempt.correctAnswers }}/{{ ranking.userBestAttempt.totalQuestions }} correctas
-              </span>
-              <span class="points-detail">
-                {{ ranking.userBestAttempt.totalPoints | number:'1.0-0' }} pts
-              </span>
+    <div *ngIf="!isLoading && quizRankings.length > 0" class="rankings-container">
+      <!-- Cada ranking como tarjeta colapsable -->
+      <div *ngFor="let ranking of quizRankings" class="quiz-ranking-card">
+        <!-- Encabezado del ranking (siempre visible) -->
+        <div class="ranking-header" (click)="toggleRanking(ranking.quizId)">
+          <div class="ranking-title">
+            <ion-icon name="trophy-outline" color="warning"></ion-icon>
+            <div class="ranking-title-text">
+              <h2>{{ ranking.quizTitle }}</h2>
+              <p *ngIf="ranking.userRank" class="user-position">
+                Tu posición: <ion-badge color="tertiary">#{{ ranking.userRank }}</ion-badge>
+              </p>
             </div>
-            <p class="date-label">{{ formatDate(ranking.userBestAttempt.completedAt) }}</p>
-          </ion-label>
-          <ion-badge slot="end" color="tertiary">#{{ ranking.userRank }}</ion-badge>
-        </ion-item>
+          </div>
+          <div class="ranking-info">
+            <ion-badge color="warning" *ngIf="ranking.topAttempts && ranking.topAttempts.length > 0">
+              Top: {{ ranking.topAttempts[0].totalPoints | number:'1.0-0' }} pts
+            </ion-badge>
+            <ion-icon [name]="isRankingExpanded(ranking.quizId) ? 'chevron-up' : 'chevron-down'" class="toggle-icon"></ion-icon>
+          </div>
+        </div>
 
-        <!-- Top 10 ranking -->
-        <ion-list-header>
-          <ion-label>Tabla de posiciones</ion-label>
-        </ion-list-header>
-        
-        <ion-list>
-          <ion-item *ngFor="let attempt of ranking.topAttempts; let i = index" [ngClass]="{'highlight-user': attempt.userId === authService.currentUser?.uid}">
-            <ion-badge slot="start" [color]="getRankColor(i+1)">{{ i + 1 }}</ion-badge>
-            <ion-label>
-              <h3>{{ attempt.userName }}</h3>
+        <!-- Contenido del ranking (colapsable) -->
+        <div class="ranking-content" [class.expanded]="isRankingExpanded(ranking.quizId)">
+          <!-- Tu mejor resultado -->
+          <div *ngIf="ranking.userBestAttempt" class="user-best">
+            <div class="user-best-header">
+              <ion-icon name="person-outline" color="tertiary"></ion-icon>
+              <h3>Tu mejor resultado</h3>
+              <ion-badge color="tertiary" class="user-rank">#{{ ranking.userRank }}</ion-badge>
+            </div>
+            <div class="user-best-content">
               <div class="score-container">
                 <ion-badge color="primary">
-                  {{ attempt.score | number:'1.0-0' }}%
+                  {{ ranking.userBestAttempt.score | number:'1.0-0' }}%
                 </ion-badge>
+                <span class="score-detail">
+                  {{ ranking.userBestAttempt.correctAnswers }}/{{ ranking.userBestAttempt.totalQuestions }} correctas
+                </span>
                 <span class="points-detail">
-                  {{ attempt.totalPoints | number:'1.0-0' }} pts
+                  {{ ranking.userBestAttempt.totalPoints | number:'1.0-0' }} pts
                 </span>
               </div>
-              <p class="date-label">{{ formatDate(attempt.completedAt) }}</p>
-            </ion-label>
-          </ion-item>
-          
-          <ion-item *ngIf="ranking.topAttempts.length === 0" lines="none" class="empty-ranking">
-            <ion-label class="ion-text-center">
-              <p>No hay intentos registrados para este quiz</p>
-            </ion-label>
-          </ion-item>
-        </ion-list>
+              <p class="date-label">{{ formatDate(ranking.userBestAttempt.completedAt) }}</p>
+            </div>
+          </div>
+
+          <!-- Tabla de posiciones -->
+          <div class="ranking-table">
+            <h4 class="ranking-table-title">TABLA DE POSICIONES</h4>
+            
+            <div class="ranking-table-content">
+              <div *ngFor="let attempt of ranking.topAttempts; let i = index" 
+                   class="ranking-row" 
+                   [class.highlight-user]="attempt.userId === authService.currentUser?.uid">
+                <div class="ranking-position">
+                  <ion-badge [color]="getRankColor(i+1)">{{ i + 1 }}</ion-badge>
+                </div>
+                <div class="ranking-user-info">
+                  <h3>{{ attempt.userName }}</h3>
+                  <div class="score-container">
+                    <ion-badge color="primary">
+                      {{ attempt.score | number:'1.0-0' }}%
+                    </ion-badge>
+                    <span class="points-detail">
+                      {{ attempt.totalPoints | number:'1.0-0' }} pts
+                    </span>
+                  </div>
+                  <p class="date-label">{{ formatDate(attempt.completedAt) }}</p>
+                </div>
+              </div>
+              
+              <div *ngIf="!ranking.topAttempts || ranking.topAttempts.length === 0" class="empty-ranking">
+                <p>No hay intentos registrados para este quiz</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </ion-accordion>
-  </ion-accordion-group>
-</div>
+    </div>
+  </div>
 </ion-content>
