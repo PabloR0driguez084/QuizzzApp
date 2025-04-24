@@ -23,6 +23,7 @@ export interface QuizOption {
 export interface QuizQuestion {
   text: string;
   options: string[];
+  correctOption: string;
 }
 
 export interface Quiz {
@@ -292,4 +293,31 @@ export class QuizService {
       })
     );
   }
+  // Añade esta función en tu clase QuizService
+
+// Barajar opciones de preguntas aleatoriamente
+randomizeQuizOptions(quiz: Quiz): Quiz {
+  // Creamos una copia profunda del quiz
+  const randomizedQuiz = JSON.parse(JSON.stringify(quiz)) as Quiz;
+  
+  // Para cada pregunta
+  randomizedQuiz.questions.forEach(question => {
+    // Asegúrate de que correctOption esté definido
+    if (!question.correctOption && question.options.length > 0) {
+      question.correctOption = question.options[0]; // Por defecto la primera si no está definida
+    }
+    
+    // Guarda la respuesta correcta
+    const correctAnswer = question.correctOption;
+    
+    // Barajar las opciones
+    const shuffledOptions = [...question.options].sort(() => 0.5 - Math.random());
+    
+    // Actualizar las opciones y la respuesta correcta
+    question.options = shuffledOptions;
+    question.correctOption = correctAnswer;
+  });
+  
+  return randomizedQuiz;
+}
 }

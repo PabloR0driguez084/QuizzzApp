@@ -30,9 +30,11 @@ import { QuizService } from '../services/QuizzService/quiz.service';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 
-interface Question {
+// Definir la nueva interfaz QuizQuestion
+export interface QuizQuestion {
   text: string;
   options: string[];
+  correctOption: string; // Añadir esta propiedad para indicar la respuesta correcta
 }
 
 @Component({
@@ -70,10 +72,11 @@ export class NewquizzPage implements OnInit {
   selectedFile: File | null = null;
   quizTitle: string = '';
   quizDescription: string = '';
-  questions: Question[] = [];
-  currentQuestion: Question = {
+  questions: QuizQuestion[] = [];
+  currentQuestion: QuizQuestion = {
     text: '',
-    options: ['', ''] // Inicialmente dos opciones vacías
+    options: ['', ''], // Inicialmente dos opciones vacías
+    correctOption: '' // Inicialmente vacía
   };
   isLoading: boolean = false;
 
@@ -96,7 +99,8 @@ export class NewquizzPage implements OnInit {
     this.questions = [];
     this.currentQuestion = {
       text: '',
-      options: ['', '']
+      options: ['', ''],
+      correctOption: ''
     };
     this.selectedFile = null;
   }
@@ -108,6 +112,11 @@ export class NewquizzPage implements OnInit {
 
   updateOptionText(index: number, event: any) {
     this.currentQuestion.options[index] = event.detail.value;
+    
+    // Si es la primera opción, actualizar también la respuesta correcta
+    if (index === 0) {
+      this.currentQuestion.correctOption = event.detail.value;
+    }
   }
 
   // Métodos para el modo manual
@@ -117,6 +126,10 @@ export class NewquizzPage implements OnInit {
 
   removeOption(index: number) {
     if (this.currentQuestion.options.length > 2) {
+      // Si se elimina la primera opción, actualizar la respuesta correcta a la nueva primera opción
+      if (index === 0 && this.currentQuestion.options.length > 1) {
+        this.currentQuestion.correctOption = this.currentQuestion.options[1];
+      }
       this.currentQuestion.options.splice(index, 1);
     }
   }
@@ -131,11 +144,15 @@ export class NewquizzPage implements OnInit {
       this.presentToast('Todas las opciones deben tener texto');
       return;
     }
+    
+    // Asegurar que la respuesta correcta sea la primera opción
+    this.currentQuestion.correctOption = this.currentQuestion.options[0];
 
     // Hacer una copia profunda para evitar referencias
-    const questionCopy = {
+    const questionCopy: QuizQuestion = {
       text: this.currentQuestion.text,
-      options: [...this.currentQuestion.options]
+      options: [...this.currentQuestion.options],
+      correctOption: this.currentQuestion.correctOption
     };
     
     this.questions.push(questionCopy);
@@ -143,7 +160,8 @@ export class NewquizzPage implements OnInit {
     // Reiniciar el formulario de pregunta actual
     this.currentQuestion = {
       text: '',
-      options: ['', '']
+      options: ['', ''],
+      correctOption: ''
     };
     
     this.presentToast('Pregunta agregada correctamente');
@@ -218,16 +236,17 @@ export class NewquizzPage implements OnInit {
       return;
     }
 
-    const questions: Question[] = [];
+    const questions: QuizQuestion[] = [];
 
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
       
       // Verificar que la fila tenga al menos una pregunta y dos opciones
       if (row.length >= 3) {
-        const question: Question = {
+        const question: QuizQuestion = {
           text: row[0],
-          options: []
+          options: [],
+          correctOption: row[1] // La primera opción (columna 1) es la respuesta correcta
         };
         
         // La primera columna es la pregunta, las demás son opciones

@@ -215,8 +215,8 @@ export class HomePage implements OnInit, OnDestroy {
     
     this.answersReview = this.quiz.questions.map((question, index) => {
       const selectedOption = this.selectedAnswers[index] || '';
-      // Para este ejemplo, considerando la primera opción como la correcta
-      const correctOption = question.options[0];
+      // Usar la respuesta correcta definida en la pregunta
+      const correctOption = question.correctOption;
       const isCorrect = selectedOption === correctOption;
       
       // En lugar de obtener tiempos del servicio, necesitaremos almacenarlos en el componente

@@ -92,63 +92,67 @@ export class QuizInteractiveService {
   ) {}
 
   // Cargar quiz por código único
-  loadQuizByCode(code: string): Observable<Quiz | null> {
-    // Actualizar estado de carga
-    this.updateState({ isLoading: true, error: null });
+  // Modifica este método en tu QuizInteractiveService
+loadQuizByCode(code: string): Observable<Quiz | null> {
+  // Actualizar estado de carga
+  this.updateState({ isLoading: true, error: null });
 
-    return this.quizService.getQuizByCode(code).pipe(
-      tap(quiz => {
-        if (quiz) {
-          // Si hay preguntas en el quiz, seleccionar aleatoriamente 10 o todas si son menos de 10
-          let selectedQuestions = quiz.questions;
-          if (selectedQuestions.length > 10) {
-            // Seleccionar aleatoriamente 10 preguntas
-            selectedQuestions = this.getRandomQuestions(quiz.questions, 10);
-          }
-
-          // Actualizar quiz con preguntas seleccionadas
-          const limitedQuiz = {
-            ...quiz,
-            questions: selectedQuestions
-          };
-
-          // Calcular puntos máximos posibles (questionTimeLimit por cada pregunta)
-          const maxPossiblePoints = selectedQuestions.length * this.questionTimeLimit;
-
-          // Actualizar el estado con el quiz
-          this.updateState({
-            quiz: limitedQuiz,
-            isLoading: false,
-            currentQuestionIndex: 0,
-            selectedAnswers: {},
-            answerTimes: {}, // Reiniciar tiempos de respuesta
-            completed: false,
-            score: 0,
-            correctAnswers: 0,
-            totalPoints: 0,
-            maxPossiblePoints: maxPossiblePoints,
-            timeRemaining: this.questionTimeLimit,
-            timerRunning: false
-          });
-          
-          // Iniciar el temporizador
-          this.startTimer();
-        } else {
-          this.updateState({ 
-            isLoading: false, 
-            error: 'Quiz no encontrado con este código' 
-          });
+  return this.quizService.getQuizByCode(code).pipe(
+    tap(quiz => {
+      if (quiz) {
+        // Si hay preguntas en el quiz, seleccionar aleatoriamente 10 o todas si son menos de 10
+        let selectedQuestions = quiz.questions;
+        if (selectedQuestions.length > 10) {
+          // Seleccionar aleatoriamente 10 preguntas
+          selectedQuestions = this.getRandomQuestions(quiz.questions, 10);
         }
-      }),
-      catchError(error => {
+
+        // Actualizar quiz con preguntas seleccionadas
+        const limitedQuiz = {
+          ...quiz,
+          questions: selectedQuestions
+        };
+        
+        // Aleatorizar las opciones de cada pregunta
+        const randomizedQuiz = this.quizService.randomizeQuizOptions(limitedQuiz);
+
+        // Calcular puntos máximos posibles (questionTimeLimit por cada pregunta)
+        const maxPossiblePoints = randomizedQuiz.questions.length * this.questionTimeLimit;
+
+        // Actualizar el estado con el quiz
+        this.updateState({
+          quiz: randomizedQuiz,
+          isLoading: false,
+          currentQuestionIndex: 0,
+          selectedAnswers: {},
+          answerTimes: {}, // Reiniciar tiempos de respuesta
+          completed: false,
+          score: 0,
+          correctAnswers: 0,
+          totalPoints: 0,
+          maxPossiblePoints: maxPossiblePoints,
+          timeRemaining: this.questionTimeLimit,
+          timerRunning: false
+        });
+        
+        // Iniciar el temporizador
+        this.startTimer();
+      } else {
         this.updateState({ 
           isLoading: false, 
-          error: `Error al cargar el quiz: ${error.message}`
+          error: 'Quiz no encontrado con este código' 
         });
-        return of(null);
-      })
-    );
-  }
+      }
+    }),
+    catchError(error => {
+      this.updateState({ 
+        isLoading: false, 
+        error: `Error al cargar el quiz: ${error.message}`
+      });
+      return of(null);
+    })
+  );
+}
 
   // Obtener preguntas aleatorias de un array
   private getRandomQuestions(questions: QuizQuestion[], count: number): QuizQuestion[] {
@@ -315,14 +319,15 @@ export class QuizInteractiveService {
     let correctAnswers = 0;
     let totalPoints = 0;
     
-    // Consideramos la primera opción como la correcta por ahora
-    // (En una app real, tendrías una respuesta correcta designada)
+    // Ahora usamos la propiedad correctOption para verificar si la respuesta es correcta
+    // Si no existe esta propiedad, usamos la primera opción como respuesta correcta por compatibilidad
     const answers = currentState.quiz.questions.map((question, index) => {
       const selectedOption = currentState.selectedAnswers[index] || '';
       const timeRemaining = currentState.answerTimes[index] || 0;
       
-      // Para este ejemplo, consideremos la primera opción como la respuesta correcta
-      const isCorrect = selectedOption === question.options[0];
+      // Si existe correctOption la usamos, si no, asumimos que la primera opción es la correcta
+      const correctOption = question.correctOption || question.options[0];
+      const isCorrect = selectedOption === correctOption;
       
       // Calcular puntos según las reglas:
       // - 0 puntos si es incorrecta o el tiempo llegó a 0
