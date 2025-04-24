@@ -117,7 +117,7 @@ export class LoginPage implements OnInit {
 
         await loading.dismiss();
         this.showSuccessToast('Registro exitoso! Bienvenido');
-        this.router.navigate(['/profile']);
+        this.router.navigate(['/home']);
       } catch (error: any) {
         await loading.dismiss();
         this.showErrorToast(this.getAuthErrorMessage(error.code));
